@@ -1,6 +1,3 @@
-"""
-Application entry point for MTI (Miami Telemetry Interface).
-"""
 import os
 from app import create_app, db
 from app.models import User, Role, SensorData, RolePermission
