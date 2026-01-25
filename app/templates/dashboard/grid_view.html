@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="action-bar">
+        <div class="action-bar-left">
+            <div class="form-group form-group-inline">
+                <label for="start-date" class="form-label">From:</label>
+                <input type="datetime-local" id="start-date" class="form-input form-input-sm">
+            </div>
+            <div class="form-group form-group-inline">
+                <label for="end-date" class="form-label">To:</label>
+                <input type="datetime-local" id="end-date" class="form-input form-input-sm">
+            </div>
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="refreshData()">Refresh</button>
+        </div>
+        <div class="action-bar-right">
+            {% if can_export %}
+            <button type="button" class="btn btn-primary" onclick="downloadExport()">DOWNLOAD .XLSX</button>
+            {% else %}
+            <button type="button" class="btn btn-disabled" disabled title="You do not have export permissions">DOWNLOAD .XLSX</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="panel" id="panel-1">
+            <div class="panel-header">
+                <h2 class="panel-title">Live Sensor Feed</h2>
+            </div>
+            <div class="panel-body">
+                {% if panel_access.panel_1 %}
+                <div class="chart-container">
+                    <canvas id="liveChart"></canvas>
+                </div>
+                {% else %}
+                <div class="restricted-overlay">
+                    <span class="restricted-icon">Restricted</span>
+                    <p class="restricted-text">You do not have permission to view this panel</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel" id="panel-2">
+            <div class="panel-header">
+                <h2 class="panel-title">Current Status</h2>
+            </div>
+            <div class="panel-body">
+                {% if panel_access.panel_2 %}
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-label">Total Readings</span>
+                        <span class="kpi-value" id="kpi-total-readings">--</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Active Sensors</span>
+                        <span class="kpi-value" id="kpi-sensor-count">--</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Avg Value</span>
+                        <span class="kpi-value" id="kpi-avg-value">--</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Status OK</span>
+                        <span class="kpi-value kpi-success" id="kpi-status-ok">--</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="restricted-overlay">
+                    <span class="restricted-icon">Restricted</span>
+                    <p class="restricted-text">You do not have permission to view this panel</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel" id="panel-3">
+            <div class="panel-header">
+                <h2 class="panel-title">Historical Logs</h2>
+            </div>
+            <div class="panel-body">
+                {% if panel_access.panel_3 %}
+                <div class="table-container table-scroll">
+                    <table class="data-table" id="logs-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Sensor</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="restricted-overlay">
+                    <span class="restricted-icon">Restricted</span>
+                    <p class="restricted-text">You do not have permission to view this panel</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel" id="panel-4">
+            <div class="panel-header">
+                <h2 class="panel-title">Device Health</h2>
+            </div>
+            <div class="panel-body">
+                {% if panel_access.panel_4 %}
+                <div class="chart-container">
+                    <canvas id="healthChart"></canvas>
+                </div>
+                {% else %}
+                <div class="restricted-overlay">
+                    <span class="restricted-icon">Restricted</span>
+                    <p class="restricted-text">You do not have permission to view this panel</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const USER_PERMISSIONS = {
+        canViewPanel1: {{ 'true' if panel_access.panel_1 else 'false' }},
+        canViewPanel2: {{ 'true' if panel_access.panel_2 else 'false' }},
+        canViewPanel3: {{ 'true' if panel_access.panel_3 else 'false' }},
+        canViewPanel4: {{ 'true' if panel_access.panel_4 else 'false' }},
+        canExport: {{ 'true' if can_export else 'false' }},
+        canEdit: {{ 'true' if can_edit else 'false' }}
+    };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
