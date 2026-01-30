@@ -24,6 +24,9 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # WebSocket configuration
+    SOCKETIO_CORS_ALLOWED_ORIGINS = os.environ.get('SOCKETIO_CORS_ORIGINS', '*')
 
 
 class DevelopmentConfig(Config):
@@ -34,6 +37,10 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
+    SOCKETIO_CORS_ALLOWED_ORIGINS = os.environ.get(
+        'SOCKETIO_CORS_ORIGINS', 
+        'https://mti.wnusair.org,https://www.mti.wnusair.org'
+    )
 
 
 class TestingConfig(Config):

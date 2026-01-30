@@ -1,6 +1,6 @@
 /**
  * Dashboard JavaScript for MTI (Miami Telemetry Interface)
- * Handles chart rendering, data fetching, and real-time updates
+ * Handles chart rendering, data fetching, real-time updates, and panel controls
  */
 
 // Chart.js default configuration
@@ -21,6 +21,13 @@ const COLORS = {
 let liveChart = null;
 let healthChart = null;
 
+// Camera state
+let cameraStream = null;
+let isCameraActive = false;
+
+// WebSocket connection
+let socket = null;
+
 // Update interval (5 seconds)
 const UPDATE_INTERVAL = 5000;
 
@@ -30,26 +37,184 @@ const UPDATE_INTERVAL = 5000;
 document.addEventListener('DOMContentLoaded', function() {
     initializeDatePickers();
     initializeCharts();
+    initializeCamera();
+    initializeWebSocket();
     loadAllData();
     
     // Start auto-refresh
     setInterval(loadAllData, UPDATE_INTERVAL);
+    
+    // Handle ESC key for fullscreen exit
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            exitFullscreen();
+        }
+    });
 });
 
 /**
+ * Initialize WebSocket connection for real-time updates
+ */
+function initializeWebSocket() {
+    if (typeof io !== 'undefined') {
+        socket = io();
+        
+        socket.on('connect', function() {
+            console.log('WebSocket connected');
+            socket.emit('join_dashboard', { room: 'dashboard' });
+        });
+        
+        socket.on('panel_data', function(data) {
+            handlePanelUpdate(data);
+        });
+        
+        socket.on('number_received', function(data) {
+            console.log('Number received:', data.value);
+        });
+    }
+}
+
+/**
+ * Handle real-time panel updates from WebSocket
+ */
+function handlePanelUpdate(data) {
+    if (data.panel_id === 'sensor_data') {
+        loadSensorData();
+    } else if (data.panel_id === 'device_health') {
+        loadDeviceHealth();
+    }
+}
+
+/**
+ * Toggle fullscreen mode for a panel
+ */
+function toggleFullscreen(panelId) {
+    const panel = document.getElementById(panelId);
+    const overlay = document.getElementById('fullscreen-overlay');
+    
+    if (panel.classList.contains('fullscreen')) {
+        exitFullscreen();
+    } else {
+        document.querySelectorAll('.panel.fullscreen').forEach(p => {
+            p.classList.remove('fullscreen');
+        });
+        
+        panel.classList.add('fullscreen');
+        overlay.classList.add('active');
+        
+        resizeAllCharts();
+    }
+}
+
+/**
+ * Exit fullscreen mode
+ */
+function exitFullscreen() {
+    document.querySelectorAll('.panel.fullscreen').forEach(panel => {
+        panel.classList.remove('fullscreen');
+    });
+    document.getElementById('fullscreen-overlay').classList.remove('active');
+    
+    resizeAllCharts();
+}
+
+/**
+ * Resize all chart instances to fit their containers
+ */
+function resizeAllCharts() {
+    setTimeout(() => {
+        if (liveChart) {
+            liveChart.resize();
+            liveChart.update('none');
+        }
+        if (healthChart) {
+            healthChart.resize();
+            healthChart.update('none');
+        }
+    }, 150);
+}
+
+/**
+ * Initialize camera device enumeration
+ */
+async function initializeCamera() {
+    const select = document.getElementById('camera-select');
+    if (!select) return;
+    
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        select.innerHTML = '<option value="">Select Camera</option>';
+        videoDevices.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.textContent = device.label || `Camera ${index + 1}`;
+            select.appendChild(option);
+        });
+        
+        if (videoDevices.length > 0) {
+            select.value = videoDevices[0].deviceId;
+        }
+    } catch (error) {
+        console.error('Error enumerating cameras:', error);
+    }
+}
+
+/**
+ * Toggle camera on/off
+ */
+async function toggleCamera() {
+    const button = document.getElementById('camera-toggle');
+    const video = document.getElementById('camera-video');
+    const placeholder = document.getElementById('camera-placeholder');
+    const select = document.getElementById('camera-select');
+    
+    if (isCameraActive) {
+        stopCamera();
+        button.textContent = 'Start Camera';
+        video.style.display = 'none';
+        placeholder.style.display = 'flex';
+    } else {
+        try {
+            const deviceId = select.value;
+            const constraints = {
+                video: deviceId ? { deviceId: { exact: deviceId } } : true
+            };
+            
+            cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = cameraStream;
+            video.style.display = 'block';
+            placeholder.style.display = 'none';
+            button.textContent = 'Stop Camera';
+            isCameraActive = true;
+            
+            await initializeCamera();
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            alert('Could not access camera. Please ensure camera permissions are granted.');
+        }
+    }
+}
+
+/**
+ * Stop camera stream
+ */
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    isCameraActive = false;
+}
+
+/**
  * Initialize date pickers with default values
- * Note: Date pickers are left empty by default so export includes all data.
- * Users can optionally set a date range to filter the export.
  */
 function initializeDatePickers() {
-    // Date pickers are intentionally left empty by default
-    // This ensures the export includes all available data
-    // Users can manually set a date range if they want to filter
-    
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
     
-    // Set max date to current time to prevent future dates
     if (startDateInput) {
         startDateInput.max = formatDateTimeLocal(new Date());
     }

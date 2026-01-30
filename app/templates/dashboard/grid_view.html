@@ -4,9 +4,145 @@
 
 {% block extra_css %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.panel-btn {
+    background: none;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs);
+    cursor: pointer;
+    color: var(--academic-gray);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+}
+
+.panel-btn:hover {
+    background-color: var(--light-wash);
+    color: var(--foundation-black);
+}
+
+.panel-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.panel.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    border-radius: 0;
+    margin: 0;
+}
+
+.panel.fullscreen .panel-body {
+    height: calc(100vh - 60px);
+}
+
+.panel.fullscreen .chart-container,
+.panel.fullscreen .vr-container,
+.panel.fullscreen .camera-container {
+    height: 100%;
+}
+
+.vr-container {
+    flex: 1;
+    position: relative;
+    min-height: 250px;
+}
+
+.vr-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: var(--radius-sm);
+}
+
+.camera-container {
+    flex: 1;
+    position: relative;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+}
+
+.camera-feed {
+    flex: 1;
+    background-color: var(--foundation-black);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.camera-feed img,
+.camera-feed video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.camera-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    align-items: center;
+}
+
+.camera-select {
+    flex: 1;
+}
+
+.camera-placeholder {
+    color: var(--academic-gray);
+    text-align: center;
+}
+
+.camera-placeholder svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.5;
+}
+
+.fullscreen-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 999;
+}
+
+.fullscreen-overlay.active {
+    display: block;
+}
+</style>
 {% endblock %}
 
 {% block content %}
+<div class="fullscreen-overlay" id="fullscreen-overlay" onclick="exitFullscreen()"></div>
+
 <div class="dashboard-container">
     <div class="action-bar">
         <div class="action-bar-left">
@@ -33,6 +169,13 @@
         <div class="panel" id="panel-1">
             <div class="panel-header">
                 <h2 class="panel-title">Live Sensor Feed</h2>
+                <div class="panel-actions">
+                    <button class="panel-btn" onclick="toggleFullscreen('panel-1')" title="Fullscreen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="panel-body">
                 {% if panel_access.panel_1 %}
@@ -50,26 +193,25 @@
 
         <div class="panel" id="panel-2">
             <div class="panel-header">
-                <h2 class="panel-title">Current Status</h2>
+                <h2 class="panel-title">VR Dashboard</h2>
+                <div class="panel-actions">
+                    <button class="panel-btn" onclick="toggleFullscreen('panel-2')" title="Fullscreen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="panel-body">
                 {% if panel_access.panel_2 %}
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <span class="kpi-label">Total Readings</span>
-                        <span class="kpi-value" id="kpi-total-readings">--</span>
-                    </div>
-                    <div class="kpi-card">
-                        <span class="kpi-label">Active Sensors</span>
-                        <span class="kpi-value" id="kpi-sensor-count">--</span>
-                    </div>
-                    <div class="kpi-card">
-                        <span class="kpi-label">Avg Value</span>
-                        <span class="kpi-value" id="kpi-avg-value">--</span>
-                    </div>
-                    <div class="kpi-card">
-                        <span class="kpi-label">Status OK</span>
-                        <span class="kpi-value kpi-success" id="kpi-status-ok">--</span>
+                <div class="vr-container">
+                    <div class="vr-link" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:1rem;">
+                        <p style="text-align:center;color:var(--academic-gray);margin-bottom:0.5rem;">
+                            The VR app cannot be embedded due to external site restrictions — open in a new tab to view it.
+                        </p>
+                        <a href="https://ae-alexander-elert.itch.io/miami-university-ohio"
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn btn-primary">Open VR App</a>
                     </div>
                 </div>
                 {% else %}
@@ -83,24 +225,34 @@
 
         <div class="panel" id="panel-3">
             <div class="panel-header">
-                <h2 class="panel-title">Historical Logs</h2>
+                <h2 class="panel-title">Live Camera Feed</h2>
+                <div class="panel-actions">
+                    <button class="panel-btn" onclick="toggleFullscreen('panel-3')" title="Fullscreen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="panel-body">
                 {% if panel_access.panel_3 %}
-                <div class="table-container table-scroll">
-                    <table class="data-table" id="logs-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Sensor</th>
-                                <th>Value</th>
-                                <th>Unit</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logs-tbody">
-                        </tbody>
-                    </table>
+                <div class="camera-container">
+                    <div class="camera-feed" id="camera-feed">
+                        <div class="camera-placeholder" id="camera-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 7l-7 5 7 5V7z"/>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                            </svg>
+                            <p>Click "Start Camera" to begin</p>
+                        </div>
+                        <video id="camera-video" autoplay playsinline style="display: none;"></video>
+                    </div>
+                    <div class="camera-controls">
+                        <select id="camera-select" class="form-select form-input-sm camera-select">
+                            <option value="">Select Camera</option>
+                        </select>
+                        <button type="button" class="btn btn-primary btn-sm" id="camera-toggle" onclick="toggleCamera()">Start Camera</button>
+                    </div>
                 </div>
                 {% else %}
                 <div class="restricted-overlay">
@@ -114,6 +266,13 @@
         <div class="panel" id="panel-4">
             <div class="panel-header">
                 <h2 class="panel-title">Device Health</h2>
+                <div class="panel-actions">
+                    <button class="panel-btn" onclick="toggleFullscreen('panel-4')" title="Fullscreen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="panel-body">
                 {% if panel_access.panel_4 %}
@@ -144,5 +303,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

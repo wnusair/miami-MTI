@@ -19,6 +19,7 @@
         </div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard.grid_view') }}" class="nav-link {% if request.endpoint == 'dashboard.grid_view' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('websocket.demo') }}" class="nav-link {% if request.endpoint == 'websocket.demo' %}active{% endif %}">WebSocket</a>
             {% if current_user.can_access_admin() %}
             <a href="{{ url_for('admin.users') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">Admin</a>
             {% endif %}

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}WebSocket Demo{% endblock %}
+
+{% block content %}
+<div class="demo-container">
+    <div class="page-header">
+        <h1 class="page-title">WebSocket Communication Demo</h1>
+        <p class="page-subtitle">Real-time bidirectional communication proof of concept - DELETE /ws/demo ROUTE WHEN DONE TESTING</p>
+    </div>
+
+    <div class="demo-grid">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Connection Status</h2>
+            </div>
+            <div class="card-body">
+                <div class="status-indicator">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span class="status-text" id="status-text">Disconnected</span>
+                </div>
+                <div class="client-count">
+                    Connected clients: <strong id="client-count">0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Send Number</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="number-input" class="form-label">Enter a number:</label>
+                    <input type="number" id="number-input" class="form-input" placeholder="Enter any number">
+                </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="sendNumber()">Send to All Clients</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Send Message</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="message-input" class="form-label">Enter a message:</label>
+                    <input type="text" id="message-input" class="form-input" placeholder="Type your message">
+                </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="sendMessage()">Broadcast Message</button>
+            </div>
+        </div>
+
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2 class="card-title">Received Data</h2>
+            </div>
+            <div class="card-body">
+                <div class="received-display">
+                    <div class="received-section">
+                        <h3 class="received-label">Last Number Received</h3>
+                        <div class="received-value" id="received-number">--</div>
+                        <div class="received-meta" id="number-meta"></div>
+                    </div>
+                    <div class="received-section">
+                        <h3 class="received-label">Last Message Received</h3>
+                        <div class="received-value received-message" id="received-message">--</div>
+                        <div class="received-meta" id="message-meta"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2 class="card-title">Event Log</h2>
+            </div>
+            <div class="card-body">
+                <div class="event-log" id="event-log"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.demo-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-subtitle {
+    color: var(--academic-gray);
+    font-size: 0.875rem;
+    margin-top: var(--spacing-xs);
+}
+
+.demo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.card-wide {
+    grid-column: span 3;
+}
+
+@media (max-width: 900px) {
+    .demo-grid {
+        grid-template-columns: 1fr;
+    }
+    .card-wide {
+        grid-column: span 1;
+    }
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--miami-red);
+    transition: background-color 0.3s ease;
+}
+
+.status-dot.connected {
+    background-color: #059669;
+}
+
+.status-text {
+    font-weight: 500;
+}
+
+.client-count {
+    font-size: 0.875rem;
+    color: var(--academic-gray);
+}
+
+.received-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+.received-section {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background-color: var(--light-wash);
+    border-radius: var(--radius-sm);
+}
+
+.received-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--academic-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-sm);
+}
+
+.received-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--miami-red);
+}
+
+.received-message {
+    font-size: 1.25rem;
+    word-break: break-word;
+}
+
+.received-meta {
+    font-size: 0.75rem;
+    color: var(--academic-gray);
+    margin-top: var(--spacing-sm);
+}
+
+.event-log {
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.75rem;
+    background-color: var(--foundation-black);
+    color: #00ff00;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+}
+
+.log-entry {
+    margin-bottom: var(--spacing-xs);
+}
+
+.log-time {
+    color: var(--academic-gray);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const socket = io();
+
+socket.on('connect', function() {
+    document.getElementById('status-dot').classList.add('connected');
+    document.getElementById('status-text').textContent = 'Connected';
+    logEvent('Connected to server');
+});
+
+socket.on('disconnect', function() {
+    document.getElementById('status-dot').classList.remove('connected');
+    document.getElementById('status-text').textContent = 'Disconnected';
+    logEvent('Disconnected from server');
+});
+
+socket.on('connection_response', function(data) {
+    logEvent(`Server: ${data.message} (ID: ${data.client_id})`);
+});
+
+socket.on('client_count', function(data) {
+    document.getElementById('client-count').textContent = data.count;
+    logEvent(`Client count updated: ${data.count}`);
+});
+
+socket.on('number_received', function(data) {
+    document.getElementById('received-number').textContent = data.value;
+    document.getElementById('number-meta').textContent = `From: ${data.sender} at ${new Date(data.timestamp).toLocaleTimeString()}`;
+    logEvent(`Number received: ${data.value} from ${data.sender}`);
+});
+
+socket.on('message_received', function(data) {
+    document.getElementById('received-message').textContent = data.message;
+    document.getElementById('message-meta').textContent = `From: ${data.sender} at ${new Date(data.timestamp).toLocaleTimeString()}`;
+    logEvent(`Message received: "${data.message}" from ${data.sender}`);
+});
+
+function sendNumber() {
+    const value = document.getElementById('number-input').value;
+    if (value !== '') {
+        socket.emit('send_number', { value: parseFloat(value) });
+        logEvent(`Sent number: ${value}`);
+        document.getElementById('number-input').value = '';
+    }
+}
+
+function sendMessage() {
+    const message = document.getElementById('message-input').value;
+    if (message.trim() !== '') {
+        socket.emit('broadcast_message', { message: message });
+        logEvent(`Sent message: "${message}"`);
+        document.getElementById('message-input').value = '';
+    }
+}
+
+function logEvent(message) {
+    const log = document.getElementById('event-log');
+    const time = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+}
+
+document.getElementById('number-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendNumber();
+});
+
+document.getElementById('message-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendMessage();
+});
+</script>
+{% endblock %}

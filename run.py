@@ -1,4 +1,9 @@
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 from app import create_app, db
 from app.models import User, Role, SensorData, RolePermission
 
@@ -56,8 +61,7 @@ def seed_admin():
 
 
 if __name__ == '__main__':
-    # SECURITY: Never run with debug=True in production
-    # Set FLASK_DEBUG=1 in development only
+    from app.extensions import socketio
     import os
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
-    app.run(debug=debug_mode)
+    socketio.run(app, debug=debug_mode, host='0.0.0.0', port=5000)

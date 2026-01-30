@@ -3,7 +3,7 @@ Application factory for MTI (Miami Telemetry Interface).
 """
 from flask import Flask
 from config import config
-from .extensions import db, login_manager, migrate
+from .extensions import db, login_manager, migrate, socketio
 
 
 def create_app(config_name='default'):
@@ -20,17 +20,23 @@ def create_app(config_name='default'):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+    
+    # WebSocket with configurable CORS for remote access
+    cors_origins = app.config.get('SOCKETIO_CORS_ALLOWED_ORIGINS', '*')
+    socketio.init_app(app, cors_allowed_origins=cors_origins)
 
     # Register blueprints
     from .blueprints.auth import auth_bp
     from .blueprints.admin import admin_bp
     from .blueprints.dashboard import dashboard_bp
     from .blueprints.api import api_bp
+    from .blueprints.websocket import websocket_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(websocket_bp, url_prefix='/ws')
 
     # Root redirect
     @app.route('/')
