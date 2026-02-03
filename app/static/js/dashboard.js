@@ -28,8 +28,8 @@ let isCameraActive = false;
 // WebSocket connection
 let socket = null;
 
-// Update interval (5 seconds)
-const UPDATE_INTERVAL = 5000;
+// Update interval (1 second)
+const UPDATE_INTERVAL = 1000;
 
 /**
  * Initialize the dashboard on page load
