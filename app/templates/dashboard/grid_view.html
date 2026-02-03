@@ -205,14 +205,58 @@
             <div class="panel-body">
                 {% if panel_access.panel_2 %}
                 <div class="vr-container">
-                    <div class="vr-link" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:1rem;">
-                        <p style="text-align:center;color:var(--academic-gray);margin-bottom:0.5rem;">
-                            The VR app cannot be embedded due to external site restrictions — open in a new tab to view it.
-                        </p>
-                        <a href="https://ae-alexander-elert.itch.io/miami-university-ohio"
-                           target="_blank" rel="noopener noreferrer"
-                           class="btn btn-primary">Open VR App</a>
+                    <div class="itch-container" id="itch-container" style="height:100%;display:flex;flex-direction:column;">
+                        <div class="game-frame" style="flex:1;display:flex;align-items:stretch;">
+                            <!-- Try the itch.io embed endpoint first. If embedding is blocked by the remote site,
+                                 the script below will show a fallback button to open in a new tab. -->
+                            <iframe id="itch-iframe"
+                                    src="https://ae-alexander-elert.itch.io/miami-university-ohio/embed"
+                                    style="width:100%;height:100%;border-radius:var(--radius-sm);border:1px solid rgba(0,0,0,0.08);background:#000;"
+                                    frameborder="0"
+                                    allowfullscreen
+                                    sandbox="allow-scripts allow-same-origin allow-forms"
+                                    title="Embedded itch.io game"></iframe>
+                        </div>
+                        <div id="itch-fallback" style="display:none;padding:1rem;text-align:center;">
+                            <p style="color:var(--academic-gray);margin-bottom:0.5rem;">Embedding blocked — open in a new tab to view the game.</p>
+                            <a id="itch-open-link" href="https://ae-alexander-elert.itch.io/miami-university-ohio" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Open VR App</a>
+                        </div>
                     </div>
+                    <script>
+                        (function(){
+                            const iframe = document.getElementById('itch-iframe');
+                            const fallback = document.getElementById('itch-fallback');
+                            const openLink = document.getElementById('itch-open-link');
+                            // If the embed loads and we can access its window, assume success.
+                            let loaded = false;
+                            function showFallback(){
+                                iframe.style.display = 'none';
+                                fallback.style.display = 'block';
+                            }
+                            iframe.addEventListener('load', function(){
+                                try{
+                                    // Accessing contentWindow.document will throw if cross-origin/frame-blocked
+                                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                                    // If doc exists and has body, treat as loaded. Some embed pages may still block, so we add a short delay check.
+                                    if(doc && doc.body){
+                                        loaded = true;
+                                    }
+                                }catch(e){
+                                    loaded = false;
+                                }
+                            });
+                            // After a short timeout, if embedding didn't succeed, show fallback.
+                            setTimeout(function(){
+                                if(!loaded){
+                                    showFallback();
+                                }
+                            }, 1600);
+                            // Extra: if user clicks fallback open, focus the new tab
+                            openLink.addEventListener('click', function(){
+                                // no-op; link has target=_blank
+                            });
+                        })();
+                    </script>
                 </div>
                 {% else %}
                 <div class="restricted-overlay">
