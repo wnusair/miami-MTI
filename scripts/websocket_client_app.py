@@ -272,8 +272,18 @@ function connect() {
     log('Connecting to ' + url + '...');
     
     socket = io(url, {
-        transports: ['websocket', 'polling'],
-        withCredentials: false
+        transports: ['polling', 'websocket'],
+        withCredentials: false,
+        upgrade: true,
+        rememberUpgrade: false
+    });
+    
+    socket.io.on('open', function() {
+        log('Transport: ' + socket.io.engine.transport.name);
+    });
+    
+    socket.io.on('upgrade', function() {
+        log('Upgraded to: ' + socket.io.engine.transport.name);
     });
     
     socket.on('connect', function() {
@@ -281,7 +291,7 @@ function connect() {
         document.getElementById('status-dot').classList.add('on');
         document.getElementById('status-text').textContent = 'Connected';
         document.getElementById('connect-btn').textContent = 'Disconnect';
-        log('Connected to server');
+        log('Connected to server (transport: ' + socket.io.engine.transport.name + ')');
         loadLatencyFromStorage();
     });
     
