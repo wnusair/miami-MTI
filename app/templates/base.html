@@ -14,8 +14,11 @@
     {% if current_user.is_authenticated %}
     <nav class="main-nav">
         <div class="nav-brand">
-            <span class="brand-text">MTI</span>
-            <span class="brand-subtitle">Miami Telemetry Interface</span>
+            <img src="{{ url_for('static', filename='images/miami-logo.png') }}" alt="Miami University" class="nav-logo">
+            <div class="nav-brand-text">
+                <span class="brand-text">MTI</span>
+                <span class="brand-subtitle">Miami Telemetry Interface</span>
+            </div>
         </div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard.grid_view') }}" class="nav-link {% if request.endpoint == 'dashboard.grid_view' %}active{% endif %}">Dashboard</a>

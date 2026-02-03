@@ -3,8 +3,9 @@ WebSocket routes and event handlers for real-time communication.
 
 STRUCTURE:
 - Core handlers (connect, disconnect, rooms) - Keep these
-- Demo/test handlers (send_number, broadcast_message) - Remove when done testing
+- Demo/test handlers - Remove when done testing (marked with DELETE WHEN DONE TESTING)
 """
+import time
 from datetime import datetime
 from flask import render_template, Response, request
 from flask_login import login_required, current_user
@@ -26,12 +27,14 @@ def handle_connect():
     client_id = request.sid
     connected_clients[client_id] = {
         'sid': client_id,
-        'username': getattr(current_user, 'username', 'anonymous')
+        'username': getattr(current_user, 'username', 'anonymous'),
+        'connected_at': time.time()
     }
     emit('connection_response', {
         'status': 'connected',
         'client_id': client_id,
-        'message': 'Connected to MTI WebSocket server'
+        'message': 'Connected to MTI WebSocket server',
+        'server_time': time.time() * 1000
     })
     emit('client_count', {'count': len(connected_clients)}, broadcast=True)
 
@@ -72,6 +75,15 @@ def handle_panel_update(data):
         'data': panel_data,
         'timestamp': datetime.now().isoformat()
     }, room='dashboard')
+
+
+@socketio.on('ping_latency')
+def handle_ping_latency(data):
+    """Respond to latency ping with server timestamp."""
+    emit('pong_latency', {
+        'client_time': data.get('client_time'),
+        'server_time': time.time() * 1000
+    })
 
 
 # =============================================================================
@@ -127,6 +139,43 @@ def handle_send_number(data):
     }, broadcast=True)
 
 
+@socketio.on('send_json')
+def handle_send_json(data):
+    """Send JSON data to all clients. DELETE WHEN DONE TESTING."""
+    payload = data.get('payload', {})
+    sender = getattr(current_user, 'username', 'anonymous')
+    
+    emit('json_received', {
+        'sender': sender,
+        'payload': payload,
+        'timestamp': datetime.now().isoformat()
+    }, broadcast=True)
+
+
+@socketio.on('send_image')
+def handle_send_image(data):
+    """Send base64 image to all clients. DELETE WHEN DONE TESTING."""
+    image_data = data.get('image', '')
+    filename = data.get('filename', 'image')
+    sender = getattr(current_user, 'username', 'anonymous')
+    
+    emit('image_received', {
+        'sender': sender,
+        'image': image_data,
+        'filename': filename,
+        'timestamp': datetime.now().isoformat()
+    }, broadcast=True)
+
+
+@socketio.on('stress_test')
+def handle_stress_test(data):
+    """Handle stress test ping. DELETE WHEN DONE TESTING."""
+    emit('stress_test_response', {
+        'sequence': data.get('sequence', 0),
+        'server_time': time.time() * 1000
+    })
+
+
 # =============================================================================
 # VIDEO FEED - Keep if using server-side camera streaming
 # =============================================================================
@@ -164,14 +213,4 @@ def generate_frames(camera_index=0):
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
     finally:
-        camera.release()@socketio.on('panel_update')
-def handle_panel_update(data):
-    """Handle real-time panel data updates."""
-    panel_id = data.get('panel_id')
-    panel_data = data.get('data', {})
-    
-    emit('panel_data', {
-        'panel_id': panel_id,
-        'data': panel_data,
-        'timestamp': __import__('datetime').datetime.now().isoformat()
-    }, room='dashboard')
+        camera.release()

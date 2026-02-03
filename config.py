@@ -2,6 +2,11 @@
 Configuration settings for the MTI (Miami Telemetry Interface) application.
 """
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file if present. This ensures
+# scripts that directly import the app (not just run.py) pick up values.
+load_dotenv()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 

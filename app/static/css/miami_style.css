@@ -74,6 +74,17 @@ body {
 
 .nav-brand {
     display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.nav-logo {
+    height: 32px;
+    width: auto;
+}
+
+.nav-brand-text {
+    display: flex;
     flex-direction: column;
 }
 

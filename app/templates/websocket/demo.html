@@ -4,9 +4,13 @@
 
 {% block content %}
 <div class="demo-container">
-    <div class="page-header">
-        <h1 class="page-title">WebSocket Communication Demo</h1>
-        <p class="page-subtitle">Real-time bidirectional communication proof of concept - DELETE /ws/demo ROUTE WHEN DONE TESTING</p>
+    <div class="page-header demo-header">
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='images/miami-logo.png') }}" alt="Miami University" class="miami-logo">
+            <div class="header-text">
+                <h1 class="page-title">WebSocket Communication Demo</h1>
+            </div>
+        </div>
     </div>
 
     <div class="demo-grid">
@@ -22,6 +26,73 @@
                 <div class="client-count">
                     Connected clients: <strong id="client-count">0</strong>
                 </div>
+                <div class="connection-actions">
+                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="reconnect()">Reconnect</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="disconnectSocket()">Disconnect</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Latency Test</h2>
+            </div>
+            <div class="card-body">
+                <div class="latency-display">
+                    <div class="latency-value" id="latency-value">--</div>
+                    <div class="latency-unit">ms</div>
+                </div>
+                <div class="latency-stats">
+                    <div class="latency-stat">
+                        <span class="latency-label">Min:</span>
+                        <span id="latency-min">--</span>
+                    </div>
+                    <div class="latency-stat">
+                        <span class="latency-label">Avg:</span>
+                        <span id="latency-avg">--</span>
+                    </div>
+                    <div class="latency-stat">
+                        <span class="latency-label">Max:</span>
+                        <span id="latency-max">--</span>
+                    </div>
+                    <div class="latency-stat">
+                        <span class="latency-label">Samples:</span>
+                        <span id="latency-samples">0</span>
+                    </div>
+                </div>
+                <div class="latency-actions">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="measureLatency()">Ping</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="startContinuousPing()">Auto Ping</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="stopContinuousPing()">Stop</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="clearLatencyStats()">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Stress Test</h2>
+            </div>
+            <div class="card-body">
+                <div class="stress-stats">
+                    <div class="stress-stat">
+                        <span class="stress-label">Sent:</span>
+                        <span id="stress-sent">0</span>
+                    </div>
+                    <div class="stress-stat">
+                        <span class="stress-label">Received:</span>
+                        <span id="stress-received">0</span>
+                    </div>
+                    <div class="stress-stat">
+                        <span class="stress-label">Lost:</span>
+                        <span id="stress-lost">0</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="stress-count" class="form-label">Messages to send:</label>
+                    <input type="number" id="stress-count" class="form-input" value="100" min="1" max="1000">
+                </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="runStressTest()">Run Stress Test</button>
             </div>
         </div>
 
@@ -51,6 +122,47 @@
             </div>
         </div>
 
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Send JSON</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="json-input" class="form-label">JSON payload:</label>
+                    <textarea id="json-input" class="form-input form-textarea" placeholder='{"key": "value"}'></textarea>
+                </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="sendJson()">Send JSON</button>
+            </div>
+        </div>
+
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2 class="card-title">Send Image</h2>
+            </div>
+            <div class="card-body">
+                <div class="image-upload-area">
+                    <input type="file" id="image-input" accept="image/*" onchange="previewImage(event)">
+                    <div class="image-settings">
+                        <div class="slider-row">
+                            <label>Quality:</label>
+                            <input type="range" id="image-quality" min="10" max="100" value="50">
+                            <span id="quality-value">50%</span>
+                        </div>
+                        <div class="slider-row">
+                            <label>Max Size:</label>
+                            <input type="range" id="image-maxsize" min="100" max="1000" value="400" step="50">
+                            <span id="maxsize-value">400px</span>
+                        </div>
+                    </div>
+                    <div class="image-preview-container">
+                        <img id="image-preview" class="image-preview" style="display: none;">
+                        <div id="image-info" class="image-info"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="sendImage()">Send Image to All Clients</button>
+            </div>
+        </div>
+
         <div class="card card-wide">
             <div class="card-header">
                 <h2 class="card-title">Received Data</h2>
@@ -73,7 +185,31 @@
 
         <div class="card card-wide">
             <div class="card-header">
+                <h2 class="card-title">Received JSON</h2>
+            </div>
+            <div class="card-body">
+                <pre class="json-display" id="received-json">No JSON received yet</pre>
+                <div class="received-meta" id="json-meta"></div>
+            </div>
+        </div>
+
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2 class="card-title">Received Image</h2>
+            </div>
+            <div class="card-body">
+                <div class="received-image-container">
+                    <img id="received-image" class="received-image" style="display: none;">
+                    <div id="received-image-placeholder" class="image-placeholder">No image received yet</div>
+                </div>
+                <div class="received-meta" id="image-meta"></div>
+            </div>
+        </div>
+
+        <div class="card card-wide">
+            <div class="card-header">
                 <h2 class="card-title">Event Log</h2>
+                <button type="button" class="btn btn-outline-dark btn-sm" onclick="clearLog()">Clear</button>
             </div>
             <div class="card-body">
                 <div class="event-log" id="event-log"></div>
@@ -86,6 +222,22 @@
 .demo-container {
     max-width: 1200px;
     margin: 0 auto;
+}
+
+.demo-header {
+    display: flex;
+    align-items: center;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.miami-logo {
+    height: 60px;
+    width: auto;
 }
 
 .page-subtitle {
@@ -105,12 +257,21 @@
     grid-column: span 3;
 }
 
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 @media (max-width: 900px) {
     .demo-grid {
         grid-template-columns: 1fr;
     }
     .card-wide {
         grid-column: span 1;
+    }
+    .miami-logo {
+        height: 40px;
     }
 }
 
@@ -140,6 +301,119 @@
 .client-count {
     font-size: 0.875rem;
     color: var(--academic-gray);
+    margin-bottom: var(--spacing-md);
+}
+
+.connection-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.latency-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+}
+
+.latency-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--miami-red);
+}
+
+.latency-unit {
+    font-size: 1rem;
+    color: var(--academic-gray);
+}
+
+.latency-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.75rem;
+}
+
+.latency-stat {
+    text-align: center;
+}
+
+.latency-label {
+    color: var(--academic-gray);
+}
+
+.latency-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.stress-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.stress-label {
+    color: var(--academic-gray);
+}
+
+.form-textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: monospace;
+}
+
+.image-upload-area {
+    margin-bottom: var(--spacing-md);
+}
+
+.image-settings {
+    margin: var(--spacing-md) 0;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.875rem;
+}
+
+.slider-row label {
+    min-width: 70px;
+    color: var(--academic-gray);
+}
+
+.slider-row input[type="range"] {
+    flex: 1;
+}
+
+.slider-row span {
+    min-width: 50px;
+    text-align: right;
+}
+
+.image-info {
+    font-size: 0.75rem;
+    color: var(--academic-gray);
+    margin-top: var(--spacing-xs);
+}
+
+.image-preview-container {
+    margin-top: var(--spacing-sm);
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
 }
 
 .received-display {
@@ -181,6 +455,38 @@
     margin-top: var(--spacing-sm);
 }
 
+.json-display {
+    background-color: var(--light-wash);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-family: monospace;
+    font-size: 0.75rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.received-image-container {
+    text-align: center;
+    min-height: 100px;
+}
+
+.received-image {
+    max-width: 100%;
+    max-height: 300px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+}
+
+.image-placeholder {
+    color: var(--academic-gray);
+    padding: var(--spacing-xl);
+    background-color: var(--light-wash);
+    border-radius: var(--radius-sm);
+}
+
 .event-log {
     max-height: 300px;
     overflow-y: auto;
@@ -205,46 +511,187 @@
 {% block extra_js %}
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-const socket = io();
+let socket = io();
+let pingInterval = null;
+let latencyData = {
+    samples: [],
+    min: null,
+    max: null
+};
+
+function loadLatencyFromCookies() {
+    const stored = getCookie('latency_stats');
+    if (stored) {
+        try {
+            latencyData = JSON.parse(stored);
+            updateLatencyDisplay();
+        } catch (e) {}
+    }
+}
+
+function saveLatencyToCookies() {
+    setCookie('latency_stats', JSON.stringify(latencyData), 1);
+}
+
+function setCookie(name, value, days) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+}
+
+function getCookie(name) {
+    return document.cookie.split('; ').reduce((r, v) => {
+        const parts = v.split('=');
+        return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+    }, '');
+}
 
 socket.on('connect', function() {
     document.getElementById('status-dot').classList.add('connected');
     document.getElementById('status-text').textContent = 'Connected';
     logEvent('Connected to server');
+    loadLatencyFromCookies();
 });
 
 socket.on('disconnect', function() {
     document.getElementById('status-dot').classList.remove('connected');
     document.getElementById('status-text').textContent = 'Disconnected';
     logEvent('Disconnected from server');
+    stopContinuousPing();
 });
 
 socket.on('connection_response', function(data) {
-    logEvent(`Server: ${data.message} (ID: ${data.client_id})`);
+    logEvent('Server: ' + data.message + ' (ID: ' + data.client_id + ')');
 });
 
 socket.on('client_count', function(data) {
     document.getElementById('client-count').textContent = data.count;
-    logEvent(`Client count updated: ${data.count}`);
+    logEvent('Client count updated: ' + data.count);
+});
+
+socket.on('pong_latency', function(data) {
+    const now = Date.now();
+    const latency = now - data.client_time;
+    recordLatency(latency);
+    logEvent('Latency: ' + latency + 'ms');
 });
 
 socket.on('number_received', function(data) {
     document.getElementById('received-number').textContent = data.value;
-    document.getElementById('number-meta').textContent = `From: ${data.sender} at ${new Date(data.timestamp).toLocaleTimeString()}`;
-    logEvent(`Number received: ${data.value} from ${data.sender}`);
+    document.getElementById('number-meta').textContent = 'From: ' + data.sender + ' at ' + new Date(data.timestamp).toLocaleTimeString();
+    logEvent('Number received: ' + data.value + ' from ' + data.sender);
 });
 
 socket.on('message_received', function(data) {
     document.getElementById('received-message').textContent = data.message;
-    document.getElementById('message-meta').textContent = `From: ${data.sender} at ${new Date(data.timestamp).toLocaleTimeString()}`;
-    logEvent(`Message received: "${data.message}" from ${data.sender}`);
+    document.getElementById('message-meta').textContent = 'From: ' + data.sender + ' at ' + new Date(data.timestamp).toLocaleTimeString();
+    logEvent('Message received: "' + data.message + '" from ' + data.sender);
 });
+
+socket.on('json_received', function(data) {
+    document.getElementById('received-json').textContent = JSON.stringify(data.payload, null, 2);
+    document.getElementById('json-meta').textContent = 'From: ' + data.sender + ' at ' + new Date(data.timestamp).toLocaleTimeString();
+    logEvent('JSON received from ' + data.sender);
+});
+
+socket.on('image_received', function(data) {
+    const img = document.getElementById('received-image');
+    const placeholder = document.getElementById('received-image-placeholder');
+    img.src = data.image;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    document.getElementById('image-meta').textContent = 'From: ' + data.sender + ' (' + data.filename + ') at ' + new Date(data.timestamp).toLocaleTimeString();
+    logEvent('Image received: ' + data.filename + ' from ' + data.sender);
+});
+
+let stressTestSent = 0;
+let stressTestReceived = 0;
+
+socket.on('stress_test_response', function(data) {
+    stressTestReceived++;
+    document.getElementById('stress-received').textContent = stressTestReceived;
+    document.getElementById('stress-lost').textContent = stressTestSent - stressTestReceived;
+});
+
+function recordLatency(latency) {
+    latencyData.samples.push(latency);
+    if (latencyData.samples.length > 100) {
+        latencyData.samples.shift();
+    }
+    if (latencyData.min === null || latency < latencyData.min) {
+        latencyData.min = latency;
+    }
+    if (latencyData.max === null || latency > latencyData.max) {
+        latencyData.max = latency;
+    }
+    saveLatencyToCookies();
+    updateLatencyDisplay();
+}
+
+function updateLatencyDisplay() {
+    if (latencyData.samples.length > 0) {
+        const latest = latencyData.samples[latencyData.samples.length - 1];
+        const avg = Math.round(latencyData.samples.reduce((a, b) => a + b, 0) / latencyData.samples.length);
+        document.getElementById('latency-value').textContent = latest;
+        document.getElementById('latency-min').textContent = latencyData.min + 'ms';
+        document.getElementById('latency-avg').textContent = avg + 'ms';
+        document.getElementById('latency-max').textContent = latencyData.max + 'ms';
+        document.getElementById('latency-samples').textContent = latencyData.samples.length;
+    }
+}
+
+function measureLatency() {
+    socket.emit('ping_latency', { client_time: Date.now() });
+}
+
+function startContinuousPing() {
+    if (pingInterval) return;
+    pingInterval = setInterval(measureLatency, 1000);
+    logEvent('Started continuous ping');
+}
+
+function stopContinuousPing() {
+    if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+        logEvent('Stopped continuous ping');
+    }
+}
+
+function clearLatencyStats() {
+    latencyData = { samples: [], min: null, max: null };
+    saveLatencyToCookies();
+    document.getElementById('latency-value').textContent = '--';
+    document.getElementById('latency-min').textContent = '--';
+    document.getElementById('latency-avg').textContent = '--';
+    document.getElementById('latency-max').textContent = '--';
+    document.getElementById('latency-samples').textContent = '0';
+    logEvent('Latency stats cleared');
+}
+
+function runStressTest() {
+    const count = parseInt(document.getElementById('stress-count').value) || 100;
+    stressTestSent = 0;
+    stressTestReceived = 0;
+    document.getElementById('stress-sent').textContent = '0';
+    document.getElementById('stress-received').textContent = '0';
+    document.getElementById('stress-lost').textContent = '0';
+    
+    logEvent('Starting stress test with ' + count + ' messages');
+    
+    for (let i = 0; i < count; i++) {
+        setTimeout(function() {
+            socket.emit('stress_test', { sequence: i });
+            stressTestSent++;
+            document.getElementById('stress-sent').textContent = stressTestSent;
+        }, i * 10);
+    }
+}
 
 function sendNumber() {
     const value = document.getElementById('number-input').value;
     if (value !== '') {
         socket.emit('send_number', { value: parseFloat(value) });
-        logEvent(`Sent number: ${value}`);
+        logEvent('Sent number: ' + value);
         document.getElementById('number-input').value = '';
     }
 }
@@ -253,9 +700,99 @@ function sendMessage() {
     const message = document.getElementById('message-input').value;
     if (message.trim() !== '') {
         socket.emit('broadcast_message', { message: message });
-        logEvent(`Sent message: "${message}"`);
+        logEvent('Sent message: "' + message + '"');
         document.getElementById('message-input').value = '';
     }
+}
+
+function sendJson() {
+    const jsonStr = document.getElementById('json-input').value;
+    try {
+        const payload = JSON.parse(jsonStr);
+        socket.emit('send_json', { payload: payload });
+        logEvent('Sent JSON payload');
+        document.getElementById('json-input').value = '';
+    } catch (e) {
+        logEvent('Error: Invalid JSON - ' + e.message);
+    }
+}
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('image-preview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            const originalSize = Math.round(e.target.result.length / 1024);
+            document.getElementById('image-info').textContent = 'Original: ' + originalSize + 'KB';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function sendImage() {
+    const input = document.getElementById('image-input');
+    const file = input.files[0];
+    if (!file) {
+        logEvent('Error: No image selected');
+        return;
+    }
+    
+    const quality = parseInt(document.getElementById('image-quality').value) / 100;
+    const maxSize = parseInt(document.getElementById('image-maxsize').value);
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > maxSize || height > maxSize) {
+                if (width > height) {
+                    height = Math.round(height * maxSize / width);
+                    width = maxSize;
+                } else {
+                    width = Math.round(width * maxSize / height);
+                    height = maxSize;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            const compressedData = canvas.toDataURL('image/jpeg', quality);
+            const compressedSize = Math.round(compressedData.length / 1024);
+            
+            logEvent('Sending image: ' + file.name + ' (' + compressedSize + 'KB, ' + width + 'x' + height + ')');
+            
+            socket.emit('send_image', {
+                image: compressedData,
+                filename: file.name
+            });
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function reconnect() {
+    socket.connect();
+    logEvent('Attempting to reconnect...');
+}
+
+function disconnectSocket() {
+    socket.disconnect();
+    logEvent('Manually disconnected');
+}
+
+function clearLog() {
+    document.getElementById('event-log').innerHTML = '';
 }
 
 function logEvent(message) {
@@ -263,7 +800,7 @@ function logEvent(message) {
     const time = new Date().toLocaleTimeString();
     const entry = document.createElement('div');
     entry.className = 'log-entry';
-    entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+    entry.innerHTML = '<span class="log-time">[' + time + ']</span> ' + message;
     log.appendChild(entry);
     log.scrollTop = log.scrollHeight;
 }
@@ -274,6 +811,14 @@ document.getElementById('number-input').addEventListener('keypress', function(e)
 
 document.getElementById('message-input').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') sendMessage();
+});
+
+document.getElementById('image-quality').addEventListener('input', function() {
+    document.getElementById('quality-value').textContent = this.value + '%';
+});
+
+document.getElementById('image-maxsize').addEventListener('input', function() {
+    document.getElementById('maxsize-value').textContent = this.value + 'px';
 });
 </script>
 {% endblock %}
