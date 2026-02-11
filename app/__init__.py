@@ -11,44 +11,40 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # SECURITY: Validate configuration
     config_class = config[config_name]
     if hasattr(config_class, 'init_app'):
         config_class.init_app(app)
 
-    # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
     
-    # WebSocket with configurable CORS for remote access
     cors_origins = app.config.get('SOCKETIO_CORS_ALLOWED_ORIGINS', '*')
-    socketio.init_app(app, cors_allowed_origins=cors_origins)
+    socketio.init_app(app, cors_allowed_origins=cors_origins, async_mode='threading')
 
-    # Register blueprints
     from .blueprints.auth import auth_bp
     from .blueprints.admin import admin_bp
     from .blueprints.dashboard import dashboard_bp
     from .blueprints.api import api_bp
     from .blueprints.websocket import websocket_bp
+    from .blueprints.game import game_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(websocket_bp, url_prefix='/ws')
+    app.register_blueprint(game_bp, url_prefix='/game')
 
-    # Root redirect
     @app.route('/')
     def index():
         from flask import redirect, url_for
         return redirect(url_for('auth.login'))
 
-    # User loader for Flask-Login
     from .models import User
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
 
     return app

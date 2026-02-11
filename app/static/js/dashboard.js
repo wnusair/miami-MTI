@@ -28,8 +28,8 @@ let isCameraActive = false;
 // WebSocket connection
 let socket = null;
 
-// Update interval (1 second)
-const UPDATE_INTERVAL = 1000;
+// Update interval (milliseconds)
+const UPDATE_INTERVAL = 50;
 
 /**
  * Initialize the dashboard on page load
@@ -102,6 +102,7 @@ function toggleFullscreen(panelId) {
         panel.classList.add('fullscreen');
         overlay.classList.add('active');
         
+        clearInlineSizes(panel);
         resizeAllCharts();
     }
 }
@@ -115,12 +116,34 @@ function exitFullscreen() {
     });
     document.getElementById('fullscreen-overlay').classList.remove('active');
     
+    document.querySelectorAll('.panel').forEach(clearInlineSizes);
+
+    const _reflow = document.body.offsetHeight;
+
     resizeAllCharts();
 }
 
-/**
- * Resize all chart instances to fit their containers
- */
+function clearInlineSizes(root) {
+    if (!root) return;
+
+    if (typeof root === 'string') {
+        root = document.getElementById(root);
+    }
+
+    const elems = root.querySelectorAll('canvas, iframe, video, img');
+    elems.forEach(el => {
+        if (el.style) {
+            el.style.width = '';
+            el.style.height = '';
+        }
+
+        if (el.tagName.toLowerCase() === 'canvas') {
+            el.removeAttribute('width');
+            el.removeAttribute('height');
+        }
+    });
+}
+
 function resizeAllCharts() {
     setTimeout(() => {
         if (liveChart) {

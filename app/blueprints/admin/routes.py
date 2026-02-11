@@ -64,7 +64,7 @@ def create_user():
 @manager_required
 def delete_user(user_id):
     """Delete a user."""
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     
     if user.id == current_user.id:
         flash('You cannot delete yourself.', 'error')
@@ -83,7 +83,7 @@ def delete_user(user_id):
 @manager_required
 def reset_password(user_id):
     """Reset a user's password."""
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     new_password = request.form.get('new_password')
 
     if not new_password:
@@ -111,7 +111,7 @@ def permissions():
 @manager_required
 def update_permissions(role_id):
     """Update permissions for a role."""
-    role = Role.query.get_or_404(role_id)
+    role = db.get_or_404(Role, role_id)
     
     # Get or create permission record
     perm = RolePermission.query.filter_by(role_id=role_id).first()

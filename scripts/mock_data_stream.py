@@ -15,14 +15,12 @@ import time
 import random
 from datetime import datetime
 
-# Add the project root to the path so we can import the app
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app, db
 from app.models import SensorData
 
 
-# Sensor configuration
 SENSORS = [
     {'name': 'Arm_Servo_1', 'unit': 'deg', 'min': 0, 'max': 180},
     {'name': 'Arm_Servo_2', 'unit': 'deg', 'min': 0, 'max': 180},
@@ -32,7 +30,6 @@ SENSORS = [
     {'name': 'System_Load', 'unit': '%', 'min': 0, 'max': 100},
 ]
 
-# Interval between data points (seconds)
 DATA_INTERVAL = 1.0
 
 
@@ -70,11 +67,9 @@ def main():
     print(f"Interval: {DATA_INTERVAL}s")
     print("-" * 60)
     
-    # Create the Flask app context
     app = create_app('default')
     
     with app.app_context():
-        # Ensure tables exist
         db.create_all()
         
         print("Starting data generation...")
@@ -87,14 +82,12 @@ def main():
                 iteration += 1
                 timestamp = datetime.utcnow()
                 
-                # Generate data for each sensor
                 for sensor in SENSORS:
                     data = generate_sensor_data(sensor)
                     db.session.add(data)
                 
                 db.session.commit()
                 
-                # Log progress
                 print(f"[{timestamp.strftime('%H:%M:%S')}] Iteration {iteration}: "
                       f"Inserted {len(SENSORS)} readings")
                 

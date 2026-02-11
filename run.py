@@ -1,10 +1,6 @@
-import eventlet
-eventlet.monkey_patch()
-
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
 from app import create_app, db
@@ -48,7 +44,6 @@ def seed_admin():
     
     admin = User.query.filter_by(username='admin').first()
     if admin is None:
-        # Generate a random password
         alphabet = string.ascii_letters + string.digits + string.punctuation
         secure_password = ''.join(secrets.choice(alphabet) for _ in range(16))
         

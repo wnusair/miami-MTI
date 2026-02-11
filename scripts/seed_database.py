@@ -13,10 +13,8 @@ Usage:
 import os
 import sys
 
-# Add the project root to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Load environment variables from .env file
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -85,7 +83,6 @@ def seed_admin():
     
     admin = User.query.filter_by(username='admin').first()
     if admin is None:
-        # Generate a secure random password
         alphabet = string.ascii_letters + string.digits + '!@#$%^&*'
         secure_password = ''.join(secrets.choice(alphabet) for _ in range(16))
         
@@ -125,7 +122,6 @@ def seed_demo_users():
         
         user = User.query.filter_by(username=username).first()
         if user is None:
-            # Generate secure random password
             secure_password = ''.join(secrets.choice(alphabet) for _ in range(16))
             user = User(username=username, role_id=role.id)
             user.set_password(secure_password)
@@ -137,7 +133,6 @@ def seed_demo_users():
     
     db.session.commit()
     
-    # Display generated credentials
     if generated_credentials:
         print("\n  Generated credentials (SAVE THESE NOW):")
         for username, role_name, password in generated_credentials:
@@ -153,24 +148,19 @@ def main():
     app = create_app('default')
     
     with app.app_context():
-        # Create all tables
         print("\nCreating database tables...")
         db.create_all()
         print("  Tables created successfully")
         
-        # Seed roles
         print("\nSeeding roles...")
         seed_roles()
         
-        # Seed permissions
         print("\nSeeding permissions...")
         seed_permissions()
         
-        # Seed admin user
         print("\nSeeding admin user...")
         seed_admin()
         
-        # Seed demo users
         print("\nSeeding demo users...")
         seed_demo_users()
         

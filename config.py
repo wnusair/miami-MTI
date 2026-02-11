@@ -15,9 +15,9 @@ class Config:
     """Base configuration."""
     SECRET_KEY = os.environ.get('SECRET_KEY')
     
-    # SECURITY: Validate SECRET_KEY is set and sufficiently strong
     @staticmethod
     def init_app(app):
+        """Validate SECRET_KEY is set and sufficiently strong."""
         if not app.config['SECRET_KEY']:
             raise ValueError(
                 "SECRET_KEY is not set. Set the SECRET_KEY environment variable. "
@@ -30,13 +30,11 @@ class Config:
         'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # WebSocket configuration - parse comma-separated origins into a list
     @staticmethod
     def parse_cors_origins(origins_str):
         """Parse CORS origins from environment variable."""
         if not origins_str or origins_str == '*':
             return '*'
-        # Split by comma and strip whitespace
         return [origin.strip() for origin in origins_str.split(',') if origin.strip()]
     
     SOCKETIO_CORS_ALLOWED_ORIGINS = parse_cors_origins.__func__(

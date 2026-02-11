@@ -42,8 +42,8 @@ def generate_password(length=16):
 def reset_passwords(users, new_passwords):
     """Apply new_passwords to the provided user objects and commit.
 
-    NOTE: This function expects to be called while an application context
-    is active (so that `db.session` is the same session used to load `users`).
+    This function expects to be called while an application context
+    is active (so that db.session is the same session used to load users).
     """
     for user, pwd in zip(users, new_passwords):
         user.set_password(pwd)
@@ -92,7 +92,6 @@ def main():
 
             reset_passwords(users, new_passwords)
 
-            # Print results
             for u, p in zip(users, new_passwords):
                 print(f'{u.username}: {p}')
 

@@ -1,7 +1,7 @@
 """
 Sensor data models for telemetry storage.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from ..extensions import db
 
 
@@ -10,7 +10,7 @@ class SensorData(db.Model):
     __tablename__ = 'sensor_data'
     
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True, nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True, nullable=False)
     sensor_name = db.Column(db.String(64), nullable=False, index=True)
     value = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(20), nullable=False)
