@@ -1,34 +1,28 @@
-# MTI - Miami Telemetry Interface
-
-Flask app for real-time sensor telemetry with role-based access control and WebSocket streaming.
-
-## Tech Stack
-
-Flask 3.0, SQLite, Flask-SocketIO, Chart.js, pandas for Excel export
+# Miami Telemetry Interface
 
 ## File Structure
 
 ```
 app/
-  blueprints/        # route handlers organized by feature
-    admin/           # user management, permission config
-    api/             # REST endpoints for sensor data
-    auth/            # login/logout
-    dashboard/       # main 4-panel grid view
-    game/            # itch.io embed proxy for VR panel
-    websocket/       # real-time communication handlers
+  blueprints/        
+    admin/           
+    api/             
+    auth/            
+    dashboard/       
+    game/            
+    websocket/       
   models/            # SQLAlchemy models
     user_models.py   # User, Role
     sensor_models.py # SensorData
     permission_models.py # RolePermission, DEFAULT_PERMISSIONS
   static/
-    css/             # miami_style.css (Miami University brand colors)
+    css/             
     js/              # dashboard.js (Chart.js rendering, WebSocket client)
-  templates/         # Jinja2 HTML templates with base.html layout
-scripts/             # standalone utilities
-tests/               # pytest test suite
-config.py            # environment-based config (dev/prod/testing)
-run.py               # app entrypoint with CLI commands
+  templates/         
+scripts/             
+tests/               
+config.py            
+run.py              
 ```
 
 ## Nomenclature
